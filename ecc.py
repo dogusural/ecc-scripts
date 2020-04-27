@@ -43,19 +43,33 @@ class NISTP_Pair_Ops:
         f.close()
         return NISTP_Pair_Ops.key
 
+class NISTP_Pair:
+
+    def __init__(self, key):
+        self.key = key
+    def get_public(self):
+        return self.key.pointQ
+    def get_secret(self):
+        return self.key.d
+    def DER_encode(self):
+        return self.key.export_key(format='DER')
+    def get_key_object(self):
+        return self.key
+
 println("")
 
 NISTP_Pair_Ops.generate_key('spareprivatekey.pem')
-nist_p_pair = NISTP_Pair_Ops.read_key()
-pub_key = nist_p_pair.pointQ
-sec_key = nist_p_pair.d
-println(createCTypeArrayfromKeyPair(nist_p_pair.export_key(format='DER').hex()))
+nist_p_pair = NISTP_Pair(NISTP_Pair_Ops.read_key())
+pub_key = nist_p_pair.get_public()
+sec_key = nist_p_pair.get_secret()
+
+println(createCTypeArrayfromKeyPair(nist_p_pair.DER_encode().hex()))
 println(createCTypeArrayfromKeyPair(point_to_secret_key_bytes(sec_key).hex()))
 println(createCTypeArrayfromKeyPair(point_to_public_key_bytes(pub_key).hex()))
 
 h = SHA256.new()
 digest = b'Hello'
 h.update(digest)
-signer = DSS.new(nist_p_pair, 'fips-186-3',encoding='der')
+signer = DSS.new(nist_p_pair.get_key_object(), 'fips-186-3',encoding='der')
 signature = signer.sign(h)
 println(createCTypeArrayfromKeyPair(signature.hex()))
